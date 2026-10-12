@@ -14,7 +14,7 @@
 
   .page-header { background: #F8F8F8; padding: 20px 20px 8px; text-align: center; position: relative; }
   .page-header h1 { font-size: 26px; font-weight: 700; color: #1C1917; letter-spacing: 0.02em; }
-  #drive-indicator { font-size: 11px; display: block; height: 16px; margin-top: 4px; transition: color 0.3s; }
+  #status-indicator { font-size: 11px; display: block; height: 16px; margin-top: 4px; transition: color 0.3s; }
 
   /* ビュー切替スイッチ */
   .view-switch { display: inline-flex; align-items: stretch; height: 42px; box-sizing: border-box; background: #EDE8E3; border-radius: 999px; padding: 3px; gap: 2px; border: 1px solid #E0D8D0; margin-left: auto; flex-shrink: 0; }
@@ -36,8 +36,6 @@
   .icon-btn { width: 42px; height: 42px; border-radius: 50%; background: #D97757; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(217,119,87,0.3); transition: background 0.15s, transform 0.1s; flex-shrink: 0; }
   .icon-btn:hover, .icon-btn.active { background: #C8602A; transform: scale(1.06); }
   .icon-btn svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-  .icon-btn.gmail-btn { background: #4285F4; box-shadow: 0 2px 8px rgba(66,133,244,0.3); }
-  .icon-btn.gmail-btn:hover { background: #3367D6; }
 
   .icon-panel { display: none; position: absolute; top: 50px; left: 0; background: #FFFFFF; border: 1px solid #E8E0D8; border-radius: 10px; padding: 10px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); z-index: 50; white-space: nowrap; min-width: 180px; }
   .icon-panel.open { display: block; }
@@ -71,8 +69,8 @@
 
   .company-link { color: #1C1917; text-decoration: none; cursor: pointer; }
   .company-link:hover strong { text-decoration: underline; color: #4A3F38; }
-  .delete-btn { background: #FBF8F5; border: 1px solid #E8E0D8; cursor: pointer; color: #A89880; font-size: 11px; padding: 3px 8px; border-radius: 4px; transition: color 0.15s, border-color 0.15s, background 0.15s; font-family: inherit; }
-  .delete-btn:hover { color: #C0392B; border-color: #C0392B; background: #FDF0F0; }
+  .edit-btn { background: #FBF8F5; border: 1px solid #E8E0D8; cursor: pointer; color: #6B5F57; font-size: 11px; padding: 3px 8px; border-radius: 4px; transition: color 0.15s, border-color 0.15s, background 0.15s; font-family: inherit; white-space: nowrap; }
+  .edit-btn:hover { color: #C8602A; border-color: #D97757; background: #FFF1EC; }
 
   td { padding: 10px 8px; border-top: 1px solid #F0EBE3; vertical-align: middle; color: #4A3F38; overflow: hidden; text-overflow: ellipsis; background: #FFFFFF; }
   tr:hover td { background: #FBF8F5; }
@@ -166,16 +164,6 @@
   .memo-popup textarea { width: 100%; min-height: 110px; padding: 10px; border: 1px solid #E8E0D8; border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; color: #1C1917; background: #FBF8F5; }
   .memo-popup textarea:focus { outline: none; border-color: #D97757; }
   .memo-popup-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
-
-  .gmail-results { background: #FBF8F5; border: 1px solid #E8E0D8; border-radius: 8px; padding: 12px; margin-top: 10px; }
-  .gmail-results h3 { font-size: 13px; color: #4A3F38; margin-bottom: 8px; }
-  .gmail-item { padding: 7px 0; border-top: 1px solid #E8E0D8; font-size: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .gmail-item:first-child { border-top: none; }
-
-  .loading { display: inline-block; width: 13px; height: 13px; border: 2px solid #E8E0D8; border-top-color: #D97757; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  #gmail-results-area { margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -184,7 +172,7 @@
 
 <div class="page-header">
   <h1>就活管理ダッシュボード</h1>
-  <span id="drive-indicator"></span>
+  <span id="status-indicator"></span>
 </div>
 
 <div class="content">
@@ -357,9 +345,8 @@
 <script>
 // ═══════════════════════════════════════════════════════
 // データ設計：
-//   ・localStorage（shukatsu_v2）= 主軸。即時保存・絶対に戻らない
-//   ・Drive = バックアップのみ（書き込み専用。初回のみ読み込み）
-//   ・初回起動時のみ Drive から最新データを引き継ぎ、以降は LS が優先
+//   ・localStorage（shukatsu_gh_v1）に即時保存。このブラウザの中だけに残る
+//   ・バックアップ / 別端末への移行は JSON の書き出し・読み込みで行う
 // ═══════════════════════════════════════════════════════
 
 const LS_KEY = 'shukatsu_gh_v1';
@@ -401,7 +388,7 @@ let currentView = 'action';
 
 // ── ユーティリティ ─────────────────────────────────────
 function setIndicator(msg, color, autoClear = 0) {
-  const el = document.getElementById('drive-indicator');
+  const el = document.getElementById('status-indicator');
   if (!el) return;
   el.textContent = msg;
   el.style.color = color;
@@ -454,7 +441,7 @@ function paint() {
 function init() {
   const ls = lsLoad();
   if (ls && ls.companies.length) {
-    companies = applyPatches(ls.companies);
+    companies = ls.companies;
     lastSavedAt = ls.savedAt;
     paint();
     const d = ls.savedAt ? new Date(ls.savedAt) : null;
@@ -494,7 +481,7 @@ function importData(e) {
       const rec = parsePayload(JSON.parse(ev.target.result));
       if (!rec.companies.length) throw new Error('データが空です');
       if (companies.length && !confirm(`${rec.companies.length}社を読み込みます。現在の${companies.length}社は上書きされます。よろしいですか？`)) return;
-      companies = applyPatches(rec.companies);
+      companies = rec.companies;
       lastSavedAt = lsSave(companies);
       paint();
       showToast(`📤 ${companies.length}社を読み込みました`);
@@ -505,14 +492,27 @@ function importData(e) {
   reader.readAsText(file);
 }
 
+// ── 日付 ─────────────────────────────────────────────
+// "YYYY-MM-DD" を日本時間の 0:00 として読む（new Date(str) だと UTC 扱いで 9 時間ずれる）
+function parseDate(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function daysUntil(s, today) { return Math.round((parseDate(s) - today) / 86400000); }
+
+// 選考が終わったステータス（締切カウントの対象外）
+const CLOSED = ['offer', 'ng', 'pass'];
+
 // ── UI ───────────────────────────────────────────────
 function updateStats() {
   const today = new Date(); today.setHours(0,0,0,0);
-  const in3 = new Date(today); in3.setDate(in3.getDate() + 3);
   let urgent = 0, active = 0, offer = 0;
   companies.forEach(c => {
-    if (c.actionDate) { const d = new Date(c.actionDate); if (d >= today && d <= in3) urgent++; }
-    if (['int1','int2','int3','submit','doc','es'].includes(c.status)) active++;
+    if (c.actionDate && !CLOSED.includes(c.status)) {
+      const diff = daysUntil(c.actionDate, today);
+      if (diff >= 0 && diff <= 3) urgent++;
+    }
+    if (!CLOSED.includes(c.status) && c.status !== 'es') active++;
     if (c.status === 'offer') offer++;
   });
   document.getElementById('stat-urgent').textContent = urgent;
@@ -576,7 +576,7 @@ function renderTable() {
   let list = allowed ? companies.filter(c => allowed.includes(c.status)) : [...companies];
   if (searchVal) list = list.filter(c => (c.company || '').toLowerCase().includes(searchVal));
   if (currentStarFilter > 0) list = list.filter(c => (+c.star || 0) >= currentStarFilter);
-  if (currentSort === 'deadline') list.sort((a, b) => (!a.actionDate && !b.actionDate) ? 0 : !a.actionDate ? 1 : !b.actionDate ? -1 : new Date(a.actionDate) - new Date(b.actionDate));
+  if (currentSort === 'deadline') list.sort((a, b) => (!a.actionDate && !b.actionDate) ? 0 : !a.actionDate ? 1 : !b.actionDate ? -1 : parseDate(a.actionDate) - parseDate(b.actionDate));
   else if (currentSort === 'stars') list.sort((a, b) => (+b.star || 0) - (+a.star || 0));
   else if (currentSort === 'name') list.sort((a, b) => (a.company || '').localeCompare(b.company || '', 'ja'));
   else list.sort((a, b) => (b._id || 0) - (a._id || 0));
@@ -590,19 +590,7 @@ function renderTable() {
   tbody.innerHTML = list.map(c => {
     const st = ST[c.status] || { label: c.status, cls: '' };
     const star = '★'.repeat(+c.star || 0) + '☆'.repeat(3 - (+c.star || 0));
-    let deadlineHtml = '<span style="color:#ccc">—</span>';
-    if (c.actionDate) {
-      const d = new Date(c.actionDate);
-      const diff = Math.round((d - today) / 86400000);
-      const parts = c.actionDate.split('-');
-      const dateStr = `${parseInt(parts[1])}/${parseInt(parts[2])}`;
-      let theme = 'dl-green', daysText = `あと${diff}日`;
-      if (diff < 0) { theme = 'dl-over'; daysText = '期限切れ'; }
-      else if (diff === 0) { theme = 'dl-red'; daysText = '今日！'; }
-      else if (diff <= 3) { theme = 'dl-red'; }
-      else if (diff <= 7) { theme = 'dl-yellow'; }
-      deadlineHtml = `<span class="dl-pill ${theme}"><span class="days-label">${daysText}</span><span class="date-label">${dateStr}</span></span>`;
-    }
+    const deadlineHtml = deadlinePill(c, today) || '<span style="color:#ccc">—</span>';
     const memoShort = c.memo ? (c.memo.length > 18 ? c.memo.slice(0, 18) + '…' : c.memo) : '';
     const idStr = String(c._id);
     return `<tr data-id="${idStr}">
@@ -629,7 +617,7 @@ function renderTable() {
       <td onclick="cycleTier('${idStr}')" style="text-align:center;cursor:pointer">
         <span class="tier-badge ${tierCls(c.tier)}" title="クリックでランクを変更">${c.tier || '–'}</span>
       </td>
-      <td><button class="delete-btn" onclick="quickDelete(event,'${idStr}')">削除</button></td>
+      <td><button class="edit-btn" onclick="openEditModal('${idStr}')" title="企業名・マイページ・ログインIDの編集、削除">編集</button></td>
     </tr>`;
   }).join('');
 }
@@ -649,8 +637,7 @@ function cycleTier(id) {
 
 function deadlinePill(c, today) {
   if (!c.actionDate) return '';
-  const d = new Date(c.actionDate);
-  const diff = Math.round((d - today) / 86400000);
+  const diff = daysUntil(c.actionDate, today);
   const p = c.actionDate.split('-');
   const dateStr = `${parseInt(p[1])}/${parseInt(p[2])}`;
   let theme = 'dl-green', daysText = `あと${diff}日`;
@@ -682,7 +669,7 @@ function renderStrategy() {
   });
   // 各層内は期限順 → 志望度順
   Object.values(groups).forEach(g => g.sort((a, b) => {
-    if (a.actionDate && b.actionDate) return new Date(a.actionDate) - new Date(b.actionDate);
+    if (a.actionDate && b.actionDate) return parseDate(a.actionDate) - parseDate(b.actionDate);
     if (a.actionDate) return -1;
     if (b.actionDate) return 1;
     return (+b.star || 0) - (+a.star || 0);
@@ -710,6 +697,7 @@ function renderStrategy() {
               <span class="badge ${st.cls}" style="width:auto;padding:3px 9px">${st.label}</span>
               <span class="stars">${star}</span>
               ${deadlinePill(c, today)}
+              <button class="edit-btn" style="margin-left:auto" onclick="openEditModal('${String(c._id)}')">編集</button>
             </div>
             ${c.action ? `<div class="co-action">▸ ${esc(c.action)}</div>` : ''}
             ${c.memo ? `<div class="co-memo">${esc(c.memo.length > 28 ? c.memo.slice(0,28) + '…' : c.memo)}</div>` : ''}
@@ -800,14 +788,6 @@ function inlineDate(cell, id, field) {
   try { inp.showPicker(); } catch (_) {}
 }
 
-function quickDelete(e, id) {
-  e.stopPropagation();
-  const c = getCompany(id); if (!c) return;
-  if (!confirm(`「${c.company}」を削除しますか？`)) return;
-  companies = companies.filter(x => String(x._id) !== String(id));
-  save();
-}
-
 // ── メモポップアップ ────────────────────────────────
 function openMemoPopup(id) {
   const c = getCompany(id); if (!c) return;
@@ -891,17 +871,6 @@ function deleteCompany() {
   if (!confirm('この企業を削除しますか？')) return;
   companies = companies.filter(c => String(c._id) !== String(editId));
   save(); closeModal();
-}
-
-// ── データパッチ（起動時に一度だけ適用） ─────────────
-function applyPatches(data) {
-  data.forEach(c => {
-    if (c.company === '日本郵政不動産') {
-      c.mypage  = 'https://mypage.3030.i-webs.jp/jpre2028/applicant/';
-      c.loginid = 'JP8100224';
-    }
-  });
-  return data;
 }
 
 // ── 起動 ─────────────────────────────────────────────
