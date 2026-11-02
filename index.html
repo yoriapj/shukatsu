@@ -649,7 +649,9 @@
     .link-btn::after, .d-meta > .tier::after, .d-meta > .mypage-btn::after { content: ''; position: absolute; inset: -8px -3px; }
     .icon-btn { width: 44px; height: 44px; }
     .toolbar .btn { height: 44px; }
-    .search input { height: 44px; font-size: 16px; }   /* 16px 未満だと iPhone が勝手に拡大する */
+    .search input { height: 44px; }
+    /* 入力欄の文字が 16px 未満だと、iPhone が入力のときに画面を拡大し、キーボードをしまっても拡大されたままになる */
+    input, textarea, select { font-size: 16px !important; }
     .view-switch { height: 44px; }
     .view-switch button { font-size: 13px; }
     /* 押したことが分かるように */
@@ -2496,6 +2498,28 @@ document.addEventListener('touchend', () => {
 addEventListener('scroll', () => {
   document.documentElement.classList.toggle('at-bottom', scrollY > 0 && innerHeight + scrollY >= document.documentElement.scrollHeight - 2);
 }, { passive: true });
+
+// ── スマホのキーボード ───────────────────────────────
+// 入力欄を選んだら、キーボードに隠れないよう、見えている範囲の真ん中あたりまで動かす
+function keepFieldVisible() {
+  const el = document.activeElement, vv = window.visualViewport;
+  if (!el || !vv || !el.matches('input, textarea')) return;
+  const r = el.getBoundingClientRect(), top = vv.offsetTop + 64, bottom = vv.offsetTop + vv.height - 16;
+  if (r.top < top || r.bottom > bottom) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+document.addEventListener('focusin', () => setTimeout(keepFieldVisible, 350));   // キーボードが出きるのを待つ
+if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(keepFieldVisible, 60));
+// 入力中に、ボタンや入力欄以外のところを軽く触ったらキーボードをしまう（スクロールしただけならしまわない）
+let kbTouch = null;
+document.addEventListener('touchstart', e => { kbTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, { passive: true });
+document.addEventListener('touchend', e => {
+  const a = document.activeElement, p = e.changedTouches[0];
+  if (!kbTouch || !a || !a.matches('input, textarea')) return;
+  const moved = Math.abs(p.clientX - kbTouch.x) > 10 || Math.abs(p.clientY - kbTouch.y) > 10;
+  kbTouch = null;
+  if (moved || e.target.closest('input, textarea, select, button, a, label, [onclick], [contenteditable]')) return;
+  a.blur();
+});
 
 // ── キーボード ───────────────────────────────────────
 // 日本語入力の変換確定の Enter は無視する
