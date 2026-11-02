@@ -357,10 +357,10 @@
   .done-mark { width: 40px; height: 40px; border-radius: 999px; background: var(--teal); color: #fff; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; animation: done-pop 0.35s cubic-bezier(.3,1.6,.6,1); }
   .done-mark svg.i { width: 20px; height: 20px; stroke-width: 3; }
   @keyframes done-pop { from { transform: scale(0.4); opacity: 0; } }
-  /* ── 起動画面（スマホだけ） ── 背景色は manifest の background_color と同じにして、OS の起動画面からつなげる */
+  /* ── 起動画面（スマホだけ） ── 背景色は manifest の background_color（白）と同じにして、OS の起動画面からつなげる */
   #splash { display: none; }
   @media (max-width: 760px) {
-    #splash { display: flex; position: fixed; inset: 0; z-index: 1000; background: var(--bg); flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding-bottom: 6vh; transition: opacity 0.35s ease, visibility 0.35s; }
+    #splash { display: flex; position: fixed; inset: 0; z-index: 1000; background: #fff; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding-bottom: 6vh; transition: opacity 0.35s ease, visibility 0.35s; }
     #splash img { height: 40px; animation: splash-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
     #splash .bar { position: relative; width: 64px; height: 3px; border-radius: 999px; background: var(--line); overflow: hidden; animation: splash-in 0.5s 0.1s both; }
     #splash .bar::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; border-radius: inherit; background: var(--teal); animation: splash-bar 1s ease-in-out infinite; }
