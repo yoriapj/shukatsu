@@ -47,7 +47,7 @@
   body { min-height: 100vh; }
   /* ホーム画面から開いたとき、時計や電池の後ろは body の背景色になる。そこを白（ヘッダーと同じ）にして、
      灰色の背景は画面に貼りつけた下敷き（::before）で出す */
-  body { background-color: #fff !important; }
+  body { background-color: #fff !important; position: relative; z-index: 0; }   /* z-index：下敷きを白の上に重ねるため */
   body::before { content: ''; position: fixed; inset: 0; z-index: -1; background: var(--bg); pointer-events: none; }
   /* 画面を開いている間は後ろを止める（スクロールバーが消えて横にずれないよう、場所は確保しておく） */
   html { scrollbar-gutter: stable; }
