@@ -1,6 +1,6 @@
 // シュウカン：オフラインでも開けるようにするための Service Worker
 // 本体（index.html）は「ネット優先」：つながるときは常に最新版、つながらないときは保存版を出す
-const CACHE = 'shukan-v1';
+const CACHE = 'shukan-v2';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png'];
 
 self.addEventListener('install', e => {
@@ -21,7 +21,8 @@ self.addEventListener('fetch', e => {
 
   if (req.mode === 'navigate') {
     e.respondWith(
-      fetch(req)
+      // ブラウザの一時保存（GitHub Pages は10分）を使わず、毎回サーバーに最新か確かめる
+      fetch(req, { cache: 'no-cache' })
         .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put('./index.html', copy)); return res; })
         .catch(() => caches.match('./index.html'))
     );
